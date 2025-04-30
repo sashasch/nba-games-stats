@@ -1,3 +1,9 @@
+# NBA Games Statistics collecting and processing system
+The system collects NBA Games Players statistics, stores it and provide
+season reports for teams and single players.
+
+## Flow
+
 ```mermaid
 graph TD
     user[User/API] -->|sends stats| kafka-ui((Kafka UI))
