@@ -1,0 +1,61 @@
+{
+  "title": "NBA Team & Player Stats",
+  "timezone": "browser",
+  "panels": [
+    {
+      "type": "table",
+      "title": "Team Season Averages",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 6 },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "datasource": "PostgresStats",
+          "rawSql": "SELECT '$season' AS season, '$team' AS team, ROUND(AVG(avg_points), 2) AS avg_points, ROUND(AVG(avg_rebounds), 2) AS avg_rebounds, ROUND(AVG(avg_assists), 2) AS avg_assists, ROUND(AVG(avg_steals), 2) AS avg_steals, ROUND(AVG(avg_blocks), 2) AS avg_blocks, ROUND(AVG(avg_fouls), 2) AS avg_fouls, ROUND(AVG(avg_played_minutes), 2) AS avg_played_minutes, MAX(updated_at) AS updated_at FROM team_players_season_stats('$season', '$team');"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Selected Player Averages",
+      "gridPos": { "x": 0, "y": 7, "w": 24, "h": 6 },
+      "targets": [
+        {
+          "refId": "B",
+          "format": "table",
+          "datasource": "PostgresStats",
+          "rawSql": "SELECT * FROM player_season_stats('$season', '$team', '$player');"
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "season",
+        "type": "query",
+        "datasource": "PostgresStats",
+        "query": "SELECT DISTINCT season FROM season_player_stats_report ORDER BY season DESC",
+        "refresh": 1
+      },
+      {
+        "name": "team",
+        "type": "query",
+        "datasource": "PostgresStats",
+        "query": "SELECT DISTINCT team FROM season_player_stats_report WHERE season = '$season' ORDER BY team",
+        "refresh": 1
+      },
+      {
+        "name": "player",
+        "type": "query",
+        "datasource": "PostgresStats",
+        "query": "SELECT DISTINCT player_name FROM season_player_stats_report WHERE season = '$season' AND team = '$team' ORDER BY player_name",
+        "refresh": 1
+      }
+    ]
+  },
+  "schemaVersion": 37,
+  "version": 1,
+  "refresh": "10s",
+  "editable": true
+}

@@ -1,0 +1,27 @@
+server:
+  port: 8080
+kafka:
+  topic:
+    game-player-stats-topic: game-player-stats-topic
+    dead-letter-topic: dead-letter-topic
+
+spring:
+  kafka:
+    bootstrap-servers: localhost:29092
+    consumer:
+      group-id: game-player-stats-group-9
+      auto-offset-reset: earliest
+    producer:
+      retries: 3
+    listener:
+      missing-topics-fatal: false
+    template:
+      default-topic: game-player-stats-topic
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nba-games-stats
+#    replace the user & pass with env variables
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10

@@ -1,0 +1,162 @@
+services:
+  postgres-app:
+    image: postgres:17-alpine
+    container_name: postgres-app
+    ports:
+      - "5432:5432"
+    volumes:
+      - ~/nba-games-stats/postgres:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d
+    env_file: .env
+    environment:
+      POSTGRES_PASSWORD: stats_pass
+      POSTGRES_USER: stats_user
+      POSTGRES_DB: nba-games-stats
+    networks:
+      - backend-network
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    env_file: .env
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=statsadmin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=test
+      - PGADMIN_CONFIG_SERVER_MODE=False
+      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
+    volumes:
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json
+    ports:
+      - "8094:80"
+    depends_on:
+      postgres-app:
+        condition: service_healthy
+    networks:
+      - backend-network
+    healthcheck:
+      test: [ "CMD", "wget", "-O", "-", "http://localhost:80/misc/ping" ]
+      interval: 10s
+      timeout: 10s
+      start_period: 160s
+      retries: 3
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: yes
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - backend-network
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    hostname: kafka-broker
+    container_name: kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      ALLOW_PLAINTEXT_LISTENER: yes
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    depends_on:
+      - zookeeper
+    networks:
+      - backend-network
+    volumes:
+      - ~/nba-games-stats/kafka/data:/etc/kafka
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  topic-init:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - backend-network
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      "
+      sleep 10 && \
+      kafka-topics --bootstrap-server kafka:9092  --create --if-not-exists --topic game-player-stats-topic  --partitions 1 --replication-factor 1 && \
+      kafka-topics --bootstrap-server kafka:9092  --create --if-not-exists --topic  dead-letter-topic --partitions 1 --replication-factor 1
+      "
+
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - "9000:8080"
+    depends_on:
+      zookeeper:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+    networks:
+      - backend-network
+    environment:
+      KAFKA_CLUSTERS_0_NAME: kafka-ui
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres-app:
+        condition: service_healthy
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - backend-network
+
+  queue_gateway:
+    build:
+      dockerfile: queue-gw/Dockerfile
+    container_name: queue_gateway_service
+    restart: on-failure
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      postgres-app:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - backend-network
+    healthcheck:
+      test: "wget -T5 -qO- http://localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+networks:
+  backend-network:
+    driver: bridge

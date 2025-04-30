@@ -1,0 +1,15 @@
+apiVersion: 1
+
+datasources:
+  - name: PostgresStats
+    type: postgres
+    access: proxy
+    orgId: 1
+    isDefault: true
+    url: postgres-app:5432
+    database: nba-games-stats
+    user: stats_user
+    secureJsonData:
+      password: stats_pass
+    jsonData:
+      sslmode: disable

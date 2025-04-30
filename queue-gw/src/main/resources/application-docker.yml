@@ -1,0 +1,6 @@
+logging.level.org.nbagamesstats.queuegw: DEBUG
+spring:
+  kafka:
+    bootstrap-servers: kafka:9092
+  datasource:
+    url: jdbc:postgresql://postgres-app:5432/nba-games-stats
