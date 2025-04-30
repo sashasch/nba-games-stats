@@ -36,4 +36,14 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-jdbc:${springBootVersion}"
     // PostgreSQL JDBC driver
     runtimeOnly 'org.postgresql:postgresql:42.7.5'
+
+    testImplementation "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
+    testImplementation "org.springframework.kafka:spring-kafka-test:${springBootVersion}"
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.3'
+    testImplementation 'org.mockito:mockito-core:5.13.0'
+    testImplementation 'org.mockito:mockito-inline:5.2.0'
+}
+
+test {
+    useJUnitPlatform()
 }

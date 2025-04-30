@@ -98,13 +98,14 @@ The message will be consumed by `queue_gateway` and stored in PostgreSQL.
 The records of received game player stats are stored in
 **game-player-stats** table and player stats aggregations over a season at **season_player_stats_report** table.
 The db tables and stored procedures/functions initialized by [initdb.sql](docker/initdb/initdb.sql) script.
+
 ---
 
 ## 📊 Grafana Dashboard
 
 - URL: `http://localhost:3000`
 - Login: `admin / admin`
-- Folder: **NBA Stats** - See the final reports there
+- Chose 'Home' -> 'Dashboards' -> Folder: **NBA Stats** - See the final dashboard with reports there.
 ---
 
 ## 📥 API Endpoints

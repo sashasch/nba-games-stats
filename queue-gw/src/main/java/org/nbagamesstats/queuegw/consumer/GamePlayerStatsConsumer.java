@@ -3,7 +3,9 @@ package org.nbagamesstats.queuegw.consumer;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.nbagamesstats.queuegw.dal.DatabaseAccessLayer;
 import org.nbagamesstats.queuegw.dto.GamePlayerStats;
@@ -17,6 +19,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Set;
 
 @Service
+@Getter
+@Setter
 @RequiredArgsConstructor
 @Slf4j
 public class GamePlayerStatsConsumer {
